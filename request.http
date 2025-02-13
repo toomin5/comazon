@@ -1,0 +1,32 @@
+###
+GET http://localhost:3000/users
+
+###
+GET http://localhost:3000/users/5ce4b6ee-5541-432d-b0e5-bd8c7324fb48
+
+###
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "email": "code@gmail.com",
+  "firstName": "code",
+  "lastName": "it",
+  "address": "서울시"
+}
+
+###
+PATCH http://localhost:3000/users/5ce4b6ee-5541-432d-b0e5-bd8c7324fb48
+Content-Type: application/json
+
+{
+  "email": "update@gmail.com",
+  "firstName": "up",
+  "lastName": "date",
+  "address": "부산광역시"
+}
+
+
+###
+DELETE http://localhost:3000/users/5ce4b6ee-5541-432d-b0e5-bd8c7324fb48
+Content-Type: application/json
