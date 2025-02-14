@@ -30,3 +30,30 @@ Content-Type: application/json
 ###
 DELETE http://localhost:3000/users/5ce4b6ee-5541-432d-b0e5-bd8c7324fb48
 Content-Type: application/json
+
+
+
+
+
+###
+GET http://localhost:3000/products
+
+###
+GET http://localhost:3000/products/
+Content-Type: application/json
+
+###
+POST http://localhost:3000/products
+Content-Type: application/json
+
+{
+  "name":"iphone",    
+  "description":"아이폰13",
+  "category":"ELECTRONICS",
+  "price":1500000,
+  "stock":1
+}
+
+###
+DELETE http://localhost:3000/products/3cd8ba61-ecc4-461c-9b12-5f9489333aac
+Content-Type: application/json
