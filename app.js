@@ -1,6 +1,13 @@
 import express, { json } from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Category, Prisma, PrismaClient } from "@prisma/client";
+import { assert } from "superstruct";
 import * as dotenv from "dotenv";
+import {
+  CreateProduct,
+  CreateUser,
+  PatchUser,
+  PatchProduct,
+} from "./structs.js";
 
 dotenv.config(); //활용하려면 config메소드를 호출해야함
 
@@ -9,11 +16,11 @@ const prisma = new PrismaClient();
 const app = express();
 app.use(express.json());
 
-app.get("/users", async (req, res) => {
-  //생성한 user테이블
-  const users = await prisma.user.findMany();
-  res.send(users);
-});
+// app.get("/users", async (req, res) => {
+//   //생성한 user테이블
+//   const users = await prisma.user.findMany();
+//   res.send(users);
+// });
 
 app.get("/users/:id", async (req, res) => {
   const user = await prisma.user.findUnique({
@@ -31,15 +38,36 @@ app.get("/users/:id", async (req, res) => {
 //   res.send(user);
 // });
 
-app.post("/users", async (req, res) => {
+app.get("/users", async (req, res) => {
   //req로 받은 정보를 가지고 users모델을 이용하여 새로운 모델을 추가
-  console.log(req.body);
-  const user = await prisma.user.create({ data: req.body });
-  res.status(201).send(user);
+  const { offset = 0, limit = 10, order = "newest" } = req.query;
+  let orderBy;
+  switch (order) {
+    case "oldest":
+      orderBy = { createdAt: "asc" };
+      break;
+    case "newest":
+      orderBy = { createdAt: "desc" };
+    default:
+      orderBy = { createdAt: "desc" };
+  }
+  const users = await prisma.user.findMany({
+    orderBy,
+    skip: parseInt(offset),
+    take: parseInt(limit),
+  });
+  res.send(users);
+});
+
+app.post("/users", async (req, res) => {
+  assert(req.body, CreateUser);
+  const newUser = await prisma.newUser.create({ data: req.body });
+  res.send(newUser);
 });
 
 app.patch("/users/:id", async (req, res) => {
   const { id } = req.params;
+  assert(req.body, CreateUser);
   const user = await prisma.user.update({
     where: { id },
     data: req.body,
@@ -62,9 +90,41 @@ app.delete("/users/:id", async (req, res) => {
 //   })
 // });
 
+//product
+
+// app.get("/products", async (req, res) => {
+//   const products = await prisma.product.findMany();
+//   res.send(products);
+// });
+
 app.get("/products", async (req, res) => {
-  const products = await prisma.product.findMany();
-  res.send(products);
+  const { offset = 0, limit = 10, category, order } = req.query;
+  let orderBy;
+
+  switch (order) {
+    case "oldest":
+      orderBy = { createdAt: "asc" };
+      break;
+    case "priceLowest":
+      orderBy = { price: "asc" };
+      break;
+    case "priceHighest":
+      orderBy = { price: "desc" };
+      break;
+    case "newest":
+      orderBy = { createdAt: "desc" };
+    default:
+      orderBy = { createdAt: "desc" };
+  }
+  const where = category ? { category } : {};
+  // { category:category } 쇼트핸드
+  const product = await prisma.product.findMany({
+    where,
+    orderBy,
+    skip: parseInt(offset),
+    take: parseInt(limit),
+  });
+  res.send(product);
 });
 
 app.get("/products/:id", async (req, res) => {
@@ -75,13 +135,14 @@ app.get("/products/:id", async (req, res) => {
 });
 
 app.post("/products", async (req, res) => {
-  const { id } = req.body;
+  assert(req.body, CreateProduct);
   const newProduct = await prisma.product.create({ data: req.body });
   res.send(newProduct);
 });
 
 app.patch("/products/:id", async (req, res) => {
   const { id } = req.params;
+  assert(req.body, PatchProduct);
   const product = await prisma.product.update({
     where: { id },
     data: req.body,

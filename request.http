@@ -2,7 +2,7 @@
 GET http://localhost:3000/users
 
 ###
-GET http://localhost:3000/users/5ce4b6ee-5541-432d-b0e5-bd8c7324fb48
+GET http://localhost:3000/users/?offset=0&limit=2&order=newest
 
 ###
 POST http://localhost:3000/users
@@ -39,7 +39,7 @@ Content-Type: application/json
 GET http://localhost:3000/products
 
 ###
-GET http://localhost:3000/products/
+GET http://localhost:3000/products/?order=priceLowest&category=FASHION
 Content-Type: application/json
 
 ###
@@ -47,11 +47,11 @@ POST http://localhost:3000/products
 Content-Type: application/json
 
 {
-  "name":"iphone",    
-  "description":"아이폰13",
-  "category":"ELECTRONICS",
+  "name":""",    
+  "description":"",
   "price":1500000,
-  "stock":1
+  "stock":1,
+  "category":"FASHION"
 }
 
 ###
