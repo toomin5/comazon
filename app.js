@@ -58,3 +58,10 @@ app.delete("/users/:id", async (req, res) => {
 app.listen(process.env.PORT || 3000, () =>
   console.log(`Server started on ${process.env.PORT}`)
 );
+
+// app.patch("/users/:id", async(req, res) => {
+//   const {id} = req.params;
+//   const user = await prisma.user.update({
+//     where:{id}
+//   })
+// });
