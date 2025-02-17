@@ -8,6 +8,7 @@ import {
   PatchUser,
   PatchProduct,
 } from "./structs.js";
+import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 dotenv.config(); //활용하려면 config메소드를 호출해야함
 
@@ -23,7 +24,17 @@ function asyncHandler(handler) {
     } catch (e) {
       console.log("Error occured");
       console.log(e.name);
-      if (e.name === "StructError") {
+      if (
+        e.name === "StructError" ||
+        (e instanceof Prisma.PrismaClientKnownRequestError &&
+          e.code === "P2022") ||
+        e instanceof Prisma.PrismaClientValidationError
+      ) {
+        res.status(400).send({ message: e.message });
+      } else if (
+        e instanceof Prisma.PrismaClientKnownRequestError &&
+        e.code === "P2025"
+      ) {
         res.status(400).send({ message: e.message });
       } else {
         res.status(500).send({ message: e.message });
@@ -41,10 +52,11 @@ function asyncHandler(handler) {
 app.get(
   "/users/:id",
   asyncHandler(async (req, res) => {
-    const user = await prisma.user.findUnique({
+    const user = await prisma.user.findUniqueOrThrow({
       where: { id: req.params.id },
     });
     res.send(user);
+    console.log(user);
   })
 );
 

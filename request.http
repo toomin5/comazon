@@ -2,7 +2,7 @@
 GET http://localhost:3000/users
 
 ###
-GET http://localhost:3000/users/?offset=0&limit=2&order=newest
+GET http://localhost:3000/users/73cb9639-d8b7-4f11-9a62-53f4187f3f15
 
 ###
 POST http://localhost:3000/users
