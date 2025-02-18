@@ -1,0 +1,30 @@
+### 
+GET http://localhost:3000/orders/dedd2a7f-56c4-45b7-a37d-efdc1d2f518d
+
+
+###
+GET http://localhost:3000/products
+
+###
+POST http://localhost:3000/users/saved-Prodcuts
+Content-Type: application/json
+
+{
+  "productId":""
+}
+
+###
+POST http://localhost:3000/products
+Content-Type: application/json
+
+{
+  "name":""",    
+  "description":"",
+  "price":1500000,
+  "stock":1,
+  "category":"FASHION"
+}
+
+###
+DELETE http://localhost:3000/products/3cd8ba61-ecc4-461c-9b12-5f9489333aac
+Content-Type: application/json

@@ -1,12 +1,15 @@
 import express, { json } from "express";
+import cors from "cors";
 import { Category, Prisma, PrismaClient } from "@prisma/client";
-import { assert } from "superstruct";
+import { assert, create } from "superstruct";
 import * as dotenv from "dotenv";
 import {
   CreateProduct,
   CreateUser,
+  CreateOrder,
   PatchUser,
   PatchProduct,
+  createSavedProduct,
 } from "./structs.js";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
@@ -15,6 +18,7 @@ dotenv.config(); //활용하려면 config메소드를 호출해야함
 const prisma = new PrismaClient();
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 function asyncHandler(handler) {
@@ -43,17 +47,19 @@ function asyncHandler(handler) {
   };
 }
 
-// app.get("/users", asyncHandler( async (req, res) => {
-//   //생성한 user테이블
-//   const users = await prisma.user.findMany();
-//   res.send(users);
-// });
-
 app.get(
   "/users/:id",
   asyncHandler(async (req, res) => {
+    const { id } = req.params;
     const user = await prisma.user.findUniqueOrThrow({
-      where: { id: req.params.id },
+      where: { id },
+      include: {
+        userPreference: {
+          select: {
+            receiveEmail: true,
+          },
+        },
+      },
     });
     res.send(user);
     console.log(user);
@@ -88,6 +94,13 @@ app.get(
       orderBy,
       skip: parseInt(offset),
       take: parseInt(limit),
+      include: {
+        userPreference: {
+          select: {
+            receiveEmail: true,
+          },
+        },
+      },
     });
     res.send(users);
   })
@@ -97,8 +110,19 @@ app.post(
   "/users",
   asyncHandler(async (req, res) => {
     assert(req.body, CreateUser);
-    const newUser = await prisma.newUser.create({ data: req.body });
-    res.send(newUser);
+    const { userPreference, ...userField } = req.body;
+    const user = await prisma.user.create({
+      data: {
+        ...userField,
+        userPreference: {
+          create: userPreference,
+        },
+      },
+      include: {
+        userPreference: true,
+      },
+    });
+    res.status(201).send(user);
   })
 );
 
@@ -107,9 +131,18 @@ app.patch(
   asyncHandler(async (req, res) => {
     const { id } = req.params;
     assert(req.body, CreateUser);
+    const { userPreference, ...userField } = req.body;
     const user = await prisma.user.update({
       where: { id },
-      data: req.body,
+      data: {
+        ...userField,
+        userPreference: {
+          update: userPreference,
+        },
+      },
+      include: {
+        userPreference: true,
+      },
     });
     res.send(user);
   })
@@ -126,19 +159,68 @@ app.delete(
   })
 );
 
-// app.patch("/users/:id", async(req, res) => {
-//   const {id} = req.params;
-//   const user = await prisma.user.update({
-//     where:{id}
-//   })
-// });
+app.get(
+  "/users/:id/saved-products",
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { savedProducts } = await prisma.user.findUniqueOrThrow({
+      where: { id },
+      include: {
+        savedProducts: true,
+      },
+    });
+    res.send(savedProducts);
+  })
+);
+
+app.post(
+  "/users/:id/saved-products",
+  asyncHandler(async (req, res) => {
+    assert(req.body, createSavedProduct);
+    const { id: userId } = req.params;
+    const { productId } = req.body;
+    const savedCount = await prisma.user.count({
+      where: {
+        id: userId,
+        savedProducts: {
+          some: { id: productId },
+        },
+      },
+    });
+
+    const condition =
+      savedCount > 0
+        ? { disconnect: { id: productId } }
+        : { connect: { id: productId } };
+
+    const { savedProducts } = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        savedProducts: condition,
+      },
+      include: {
+        savedProducts: true,
+      },
+    });
+    res.send(savedProducts);
+  })
+);
+
+app.get(
+  "/users/:id/orders",
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const { orders } = await prisma.user.findUniqueOrThrow({
+      where: { id },
+      include: {
+        orders: true,
+      },
+    });
+    res.send(orders);
+  })
+);
 
 //product
-
-// app.get("/products", asyncHandler( async (req, res) => {
-//   const products = await prisma.product.findMany();
-//   res.send(products);
-// }));
 
 app.get(
   "/products",
@@ -213,6 +295,102 @@ app.delete(
       where: { id },
     });
     res.send("Success delete");
+  })
+);
+
+//orders
+app.post(
+  "/orders",
+  asyncHandler(async (req, res) => {
+    // 요청 본문(req.body)이 CreateOrder 스키마를 따르는지 확인
+    assert(req.body, CreateOrder);
+    const { userId, orderItems } = req.body;
+    // 1. 주문에 포함된 상품들의 ID 배열 추출
+    const productIds = orderItems.map((orderItem) => orderItem.productId);
+    // 2. 데이터베이스에서 해당 상품 정보 조회
+    const products = await prisma.product.findMany({
+      where: { id: { in: productIds } }, // productIds 배열에 포함된 ID들만 조회
+    });
+    // 특정 productId에 해당하는 주문 수량을 반환하는 함수
+    function getQuantity(productId) {
+      const { quantity } = orderItems.find(
+        (orderItem) => orderItem.productId === productId
+      );
+      return quantity;
+    }
+    // 3. 주문한 모든 상품이 재고를 충분히 가지고 있는지 확인
+    const isSuffcientStock = products.every((product) => {
+      const { id, stock } = product; // 상품 ID와 재고량
+      return stock >= getQuantity(id); // 재고가 주문량 이상이어야 함
+    });
+    // 4. 재고가 부족하면 에러 반환
+    if (!isSuffcientStock) {
+      throw new Error("Insufficient stock"); // 재고 부족 예외 발생
+    }
+
+    // 재고감소
+    // for (const productId of productIds) {
+    //   await prisma.product.update({
+    //     where: { id: productId },
+    //     data: {
+    //       stock: {
+    //         decrement: getQuantity(productId),
+    //       },
+    //     },
+    //   });
+    // }
+    const querise = productIds.map((productId) => {
+      return prisma.product.update({
+        where: { id: productId },
+        data: {
+          stock: {
+            decrement: getQuantity(productId),
+          },
+        },
+      });
+    });
+    await Promise.all(querise);
+
+    // 5. 주문 생성
+    const [order] = await prisma.$transaction([
+      prisma.order.create({
+        data: {
+          user: {
+            connect: { id: userId },
+          },
+          orderItems: {
+            create: orderItems, // 주문 항목(orderItems)을 포함하여 주문 생성
+          },
+        },
+        include: {
+          orderItems: true, // 생성된 주문에 포함된 주문 항목도 함께 반환
+        },
+      }),
+      ...querise,
+    ]);
+
+    // 6. 생성된 주문 정보를 응답으로 반환
+    res.status(201).send(order);
+  })
+);
+
+app.get(
+  "/orders/:id",
+  asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const order = await prisma.order.findUniqueOrThrow({
+      where: { id },
+      include: {
+        orderItems: true,
+      },
+    });
+    let total = 0;
+    order.orderItems.forEach((item) => {
+      // ({unitPrice, quantity})
+      total += item.unitPrice * item.quantity; // unitPrice * quantity
+    });
+    order.total = total;
+    res.send(order);
   })
 );
 

@@ -22,7 +22,7 @@ model User {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   orders         Order[] //배열은 1:N 관계 표시
-  UserPreference UserPreference? //?로 옵셔널 
+  userPreference UserPreference? //?로 옵셔널 
   savedProducts  Product[] // N:M 관계 사용자가 상품을 n개 찜하는 기능 
 }
 
@@ -64,9 +64,9 @@ model OrderItem {
   quantity  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  order     Order    @relation(fields: [orderId], references: [id]) //fields실제만들어지는 필드 , 참조하는모델 Order에 id
-  Product   Product  @relation(fields: [productId], references: [id])
-  productId String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade) //fields실제만들어지는 필드 , 참조하는모델 Order에 id
+  Product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productId String?
   orderId   String
 }
 

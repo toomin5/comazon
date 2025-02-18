@@ -1,0 +1,46 @@
+###
+GET http://localhost:3000/users
+
+###
+GET http://localhost:3000/users/70e1e61d-f2ae-4d7d-bf8f-d65eafdb6a45
+
+###
+GET http://localhost:3000/users/fd3ae0a5-8dd5-40b6-b8fd-48870f731db1/orders
+Content-Type: application/json
+
+###
+POST http://localhost:3000/users
+Content-Type: application/json
+
+{
+  "email": "codeit@gmail.com",
+  "firstName": "code",
+  "lastName": "it",
+  "address": "서울시",
+  "userPreference": {
+    "receiveEmail": false
+  }
+}
+
+###
+PATCH http://localhost:3000/users/5ce4b6ee-5541-432d-b0e5-bd8c7324fb48
+Content-Type: application/json
+
+{
+  "email": "update123@gmail.com",
+  "firstName": "code123",
+  "lastName": "it123",
+  "address": "서울시",
+  "userPreference": {
+    "receiveEmail": true
+  }
+}
+
+
+###
+DELETE http://localhost:3000/users/5ce4b6ee-5541-432d-b0e5-bd8c7324fb48
+Content-Type: application/json
+
+
+
+
