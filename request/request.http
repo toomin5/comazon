@@ -2,7 +2,7 @@
 GET http://localhost:3000/users
 
 ###
-GET http://localhost:3000/users/70e1e61d-f2ae-4d7d-bf8f-d65eafdb6a45
+GET http://localhost:3000/users/58c80a7f-3e10-4b67-8096-b89c1de2e0a0
 
 ###
 GET http://localhost:3000/users/fd3ae0a5-8dd5-40b6-b8fd-48870f731db1/orders
@@ -13,10 +13,10 @@ POST http://localhost:3000/users
 Content-Type: application/json
 
 {
-  "email": "codeit@gmail.com",
-  "firstName": "code",
-  "lastName": "it",
-  "address": "서울시",
+  "email": "min7332@gmail.com",
+  "firstName": "min",
+  "lastName": "lee",
+  "address": "경기도",
   "userPreference": {
     "receiveEmail": false
   }

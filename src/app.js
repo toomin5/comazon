@@ -10,7 +10,7 @@ import {
   PatchUser,
   PatchProduct,
   createSavedProduct,
-} from "./structs.js";
+} from "../structs.js";
 import { PrismaClientKnownRequestError } from "@prisma/client/runtime/library";
 
 dotenv.config(); //활용하려면 config메소드를 호출해야함
@@ -65,15 +65,6 @@ app.get(
     console.log(user);
   })
 );
-
-// //구조 분해 할당
-// app.get("/users/:id", asyncHandler( async (req, res) => {
-//   const { id } = req.params;
-//   const user = await prisma.user.findUnique({
-//     where: { id },
-//   });
-//   res.send(user);
-// });
 
 app.get(
   "/users",
@@ -328,17 +319,6 @@ app.post(
       throw new Error("Insufficient stock"); // 재고 부족 예외 발생
     }
 
-    // 재고감소
-    // for (const productId of productIds) {
-    //   await prisma.product.update({
-    //     where: { id: productId },
-    //     data: {
-    //       stock: {
-    //         decrement: getQuantity(productId),
-    //       },
-    //     },
-    //   });
-    // }
     const querise = productIds.map((productId) => {
       return prisma.product.update({
         where: { id: productId },
